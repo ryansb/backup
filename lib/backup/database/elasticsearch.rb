@@ -1,4 +1,5 @@
 # encoding: utf-8
+require 'net/http'
 
 module Backup
   module Database
@@ -142,7 +143,12 @@ module Backup
           EOS
         end
         pipeline = Pipeline.new
-        pipeline << "#{ utility(:tar) } -cf - #{ src_path }"
+
+        # avoid the tar "removing leading /" warning for absolute paths
+        pmod = src_path.start_with?('/') ? '-C / ' : ''
+        src_path.sub!(%r{^/}, '')
+
+        pipeline << "#{ utility(:tar) } #{ pmod } -cf - #{ src_path }"
         dst_ext = '.tar'
         if model.compressor
           model.compressor.compress_with do |cmd, ext|
